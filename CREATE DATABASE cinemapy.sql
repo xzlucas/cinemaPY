@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS	peliculas_directores (
 	id_director INT NOT NULL,
     id_pelicula INT NOT NULL,
     descripcion VARCHAR(30),
-	CONSTRAINT FK_Películas_Directores
+	CONSTRAINT FK_Películas_Directores 
 	FOREIGN KEY (id_director)
 		REFERENCES directores(id_director)
         ON DELETE CASCADE
@@ -159,7 +159,7 @@ INSERT INTO directores (id_director, fecha_debut, id_persona)
 (3 ,'1995-01-01', 6),
 (4 ,'1995-01-01', 8);
 
-/*
+-- Ingreso de Actores que trabajan en peliculas
 
 INSERT INTO peliculas_actores (id_pelicula, id_actor)
 	VALUE (1,1),
@@ -174,13 +174,78 @@ INSERT INTO peliculas_actores (id_pelicula, id_actor)
     (6,4),
     (6,6);
     
-INSERT INTO peliculas_directores (id_pel_dir, id_pelicula, id_director)
-	VALUE (11,1,1),
-    (24,2,4),
-    (32,3,2),
-    (43,4,3),
-    (52,5,2),
-    (64,6,4);
+-- Ingreso de Directores que trabajan en peliculas
+
+INSERT INTO peliculas_directores (id_pelicula, id_director)
+	VALUE (1,1),
+    (2,4),
+    (3,2),
+    (4,3),
+    (5,2),
+    (6,4);
     
-    */
+# VISTAS
+
+CREATE OR REPLACE VIEW lista_peliculas AS
+	( SELECT título, fecha, duracion, g.nombre_genero
+		FROM peliculas p 
+        JOIN generos g ON p.id_genero = g.id_genero
+        ORDER BY título ASC);
     
+CREATE OR REPLACE VIEW lista_actores AS
+	( SELECT p.nombre, p.apellido, p.nacionalidad, a.fecha_debut
+		FROM actores a 
+        JOIN personas p ON a.id_persona = p.id_persona
+        ORDER BY p.apellido ASC);
+
+CREATE OR REPLACE VIEW lista_directores AS
+	( SELECT p.nombre, p.apellido, p.nacionalidad, d.fecha_debut
+		FROM directores d 
+        JOIN personas p ON d.id_persona = p.id_persona
+        ORDER BY p.apellido ASC);
+        
+# ESTA VISTA SERIA UN LISTADO DE ACTORES, DONDE SALGAN LAS PELICULAS DONDE TRABAJARON
+CREATE OR REPLACE VIEW lista_trabajos AS
+	( SELECT p.nombre, p.apellido, p.nacionalidad, a.fecha_debut, pel.título
+		FROM actores a 
+        JOIN personas p ON a.id_persona = p.id_persona
+        LEFT JOIN peliculas_actores pa ON a.id_actor = pa.id_actor
+        LEFT JOIN peliculas pel ON pel.id_pelicula = pa.id_pelicula
+        );
+     
+CREATE OR REPLACE VIEW lista_peliculas AS
+	( SELECT título, fecha, duracion, g.nombre_genero, pa.id_pel_act
+		FROM peliculas p 
+        JOIN generos g ON p.id_genero = g.id_genero
+		LEFT JOIN peliculas_actores pa ON pa.id_pelicula = p.id_pelicula
+        ORDER BY título ASC);
+
+#FUNCIONES
+
+-- devuelve peliculas con duraccion máxima declarada
+DELIMITER //
+CREATE FUNCTION pel_duracion (maxdur INT)
+RETURNS VARCHAR(300)
+NO SQL
+BEGIN
+	DECLARE peliculas VARCHAR(300);
+    SET peliculas = (SELECT pel.título FROM peliculas pel WHERE pel.duracion < maxdur);
+	RETURN peliculas;
+END//
+DELIMITER ;
+
+# SELECT pel_duracion(150)
+
+-- ME GUSTARIA INGRESAR LA PELICULA Y QUE TRAIGA LOS ACTORES RELACIONADOS, pero tengo el problema del join..
+DELIMITER //
+CREATE FUNCTION pel_actor (peli VARCHAR(300))
+RETURNS VARCHAR(300)
+NO SQL
+BEGIN
+	DECLARE peliculas VARCHAR(100);
+    SET peliculas = (SELECT pel.título FROM peliculas pel WHERE pel.título LIKE peli);
+	RETURN peliculas;
+END//
+DELIMITER ;
+
+#SELECT pel_actor("%jango%")
