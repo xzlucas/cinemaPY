@@ -214,10 +214,11 @@ CREATE OR REPLACE VIEW lista_trabajos AS
         );
      
 CREATE OR REPLACE VIEW lista_peliculas AS
-	( SELECT título, fecha, duracion, g.nombre_genero, pa.id_pel_act
+	( SELECT p.título, a.id_actor, pe.nombre, pe.apellido
 		FROM peliculas p 
-        JOIN generos g ON p.id_genero = g.id_genero
-		LEFT JOIN peliculas_actores pa ON pa.id_pelicula = p.id_pelicula
+		LEFT JOIN peliculas_actores pa ON pa.id_pelicula = p.id_genero
+        LEFT JOIN actores a ON a.id_actor = pa.id_actor
+        LEFT JOIN personas pe ON a.id_persona = pe.id_persona
         ORDER BY título ASC);
 
 #FUNCIONES
@@ -236,11 +237,11 @@ DELIMITER ;
 
 # SELECT pel_duracion(150)
 
--- ME GUSTARIA INGRESAR LA PELICULA Y QUE TRAIGA LOS ACTORES RELACIONADOS, pero tengo el problema del join..
+-- es un buscador de peliculas ¿como hago para que me permita devolver una lista?
 DELIMITER //
 CREATE FUNCTION pel_actor (peli VARCHAR(300))
 RETURNS VARCHAR(300)
-NO SQL
+READS SQL DATA
 BEGIN
 	DECLARE peliculas VARCHAR(100);
     SET peliculas = (SELECT pel.título FROM peliculas pel WHERE pel.título LIKE peli);
@@ -248,4 +249,4 @@ BEGIN
 END//
 DELIMITER ;
 
-#SELECT pel_actor("%jango%")
+#SELECT pel_actor("%ti%")
